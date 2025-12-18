@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eire-Potato Pro QA</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and Babel for logic -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Simple Icon Component since we are using CDN
+        const Icon = ({ name, size = 24, className = "" }) => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [records, setRecords] = useState({
+                cleaning: [], pest: [], fuel: [], training: [], 
+                vehicle: [], visitor: [], temps: [], documents: []
+            });
+
+            const staffList = ["Farm Manager", "Staff 1", "Staff 2", "Staff 3", "Staff 4", "Seasonal 1", "Seasonal 2"];
+            const stores = ["Cold Store 1", "Cold Store 2", "Cold Store 3", "Loading Bay", "Grading Area"];
+            
+            const requiredDocs = [
+                { name: "HACCP Plan", category: "Food Safety", id: "haccp" },
+                { name: "Farm Safety Risk Assessment", category: "Safety", id: "fsra" },
+                { name: "Site Map", category: "Site", id: "map" },
+                { name: "Water Management Plan", category: "Environment", id: "water" },
+                { name: "Tesco PPPL 24/25", category: "Tesco", id: "pppl_doc" }
+            ];
+
+            useEffect(() => {
+                const saved = localStorage.getItem('farm_records_final');
+                if (saved) setRecords(JSON.parse(saved));
+            }, []);
+
+            const saveRecord = (type, data) => {
+                const newRecords = {
+                    ...records,
+                    [type]: [{ ...data, id: Date.now(), timestamp: new Date().toLocaleString() }, ...records[type]]
+                };
+                setRecords(newRecords);
+                localStorage.setItem('farm_records_final', JSON.stringify(newRecords));
+                setView('home');
+            };
+
+            const HomeView = () => (
+                <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
+                    <div className="bg-emerald-800 p-8 rounded-3xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tighter uppercase">EIRE-POTATO PRO</h1>
+                            <p className="text-emerald-200 text-sm">QA Compliance Manager</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="bg-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-600">3 STORES</span>
+                            <span className="bg-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-600">7 STAFF</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                            { id: 'temps', label: 'Store Temps', icon: 'thermometer', color: 'bg-cyan-600' },
+                            { id: 'cleaning', label: 'Cleaning', icon: 'clipboard-check', color: 'bg-blue-600' },
+                            { id: 'pest', label: 'Pest Control', icon: 'bug', color: 'bg-rose-600' },
+                            { id: 'vehicle', label: 'Vehicle Insp', icon: 'truck', color: 'bg-amber-600' },
+                            { id: 'documents', label: 'Policy Vault', icon: 'file-text', color: 'bg-emerald-700' },
+                            { id: 'fuel', label: 'Fuel Usage', icon: 'fuel', color: 'bg-slate-700' },
+                            { id: 'training', label: 'Training', icon: 'users', color: 'bg-purple-600' },
+                            { id: 'visitor', label: 'Visitor Log', icon: 'user-plus', color: 'bg-emerald-600' },
+                        ].map(item => (
+                            <button key={item.id} onClick={() => setView(item.id)} className="flex flex-col items-start p-6 bg-white rounded-3xl shadow-sm border border-slate-100 hover:border-emerald-300 transition-all active:scale-95 text-left">
+                                <div className={`${item.color} p-3 rounded-2xl text-white mb-4`}><Icon name={item.icon} size={28} /></div>
+                                <span className="font-black text-slate-800 text-sm">{item.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="font-black text-lg flex items-center gap-2 text-slate-800"><Icon name="history" className="text-emerald-600" /> Recent Logs</h2>
+                            <button onClick={() => setView('history')} className="text-emerald-700 font-bold text-sm">View All</button>
+                        </div>
+                        <div className="space-y-3">
+                            {Object.values(records).flat().sort((a,b) => b.id - a.id).slice(0, 3).map((rec, i) => (
+                                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                                    <Icon name="check-circle-2" className="text-emerald-500" size={16} />
+                                    <div className="flex-1 text-xs">
+                                        <p className="font-bold text-slate-400 uppercase">{rec.timestamp}</p>
+                                        <p className="font-semibold text-slate-700">Audit point recorded successfully.</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const HistoryView = () => (
+                <div className="p-4 md:p-12 max-w-4xl mx-auto space-y-6">
+                    <div className="flex items-center justify-between">
+                        <button onClick={() => setView('home')} className="p-3 bg-white rounded-xl shadow-sm"><Icon name="x" /></button>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">Audit Logs</h2>
+                        <div className="w-10"></div>
+                    </div>
+                    {Object.entries(records).map(([type, items]) => (
+                        items.length > 0 && type !== 'documents' && (
+                            <div key={type} className="space-y-2">
+                                <h3 className="text-xs font-black uppercase text-emerald-700 tracking-widest pl-2">{type}</h3>
+                                {items.map(item => (
+                                    <div key={item.id} className="bg-white p-5 rounded-3xl border shadow-sm">
+                                        <p className="text-[10px] font-bold text-slate-400 mb-2">{item.timestamp}</p>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {Object.entries(item).filter(([k]) => !['id', 'timestamp'].includes(k)).map(([k, v]) => (
+                                                <div key={k}><span className="font-bold text-slate-400 uppercase text-[9px] block">{k}</span> {String(v)}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    ))}
+                </div>
+            );
+
+            const PolicyVault = () => (
+                <div className="p-4 md:p-12 max-w-4xl mx-auto space-y-6">
+                    <div className="flex items-center justify-between">
+                        <button onClick={() => setView('home')} className="p-3 bg-white rounded-xl shadow-sm"><Icon name="x" /></button>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">Policy Vault</h2>
+                        <button onClick={() => setView('add_doc')} className="p-3 bg-emerald-700 text-white rounded-xl"><Icon name="plus" /></button>
+                    </div>
+                    <div className="space-y-3">
+                        {requiredDocs.map(doc => {
+                            const uploaded = records.documents.find(d => d.requirementId === doc.id);
+                            return (
+                                <div key={doc.id} className="bg-white p-5 rounded-3xl border flex items-center justify-between shadow-sm">
+                                    <div>
+                                        <p className="font-black text-slate-800">{doc.name}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{doc.category}</p>
+                                    </div>
+                                    <div className={`p-2 rounded-xl ${uploaded ? 'text-emerald-600 bg-emerald-50' : 'text-slate-300 bg-slate-50'}`}>
+                                        <Icon name={uploaded ? "shield-check" : "upload"} size={24} />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+
+            // Generic Form Component
+            const RecordForm = ({ title, type, fields, color }) => (
+                <div className="p-4 md:p-12 max-w-2xl mx-auto">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
+                        <div className={`${color} p-8 text-white flex justify-between items-center`}>
+                            <h2 className="text-2xl font-black uppercase tracking-tighter">{title}</h2>
+                            <button onClick={() => setView('home')} className="bg-black/20 p-2 rounded-xl"><Icon name="x" /></button>
+                        </div>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            saveRecord(type, Object.fromEntries(new FormData(e.target)));
+                        }} className="p-8 space-y-4">
+                            {fields.map(f => (
+                                <div key={f.name}>
+                                    <label className="block text-xs font-black uppercase text-slate-400 mb-1 tracking-widest">{f.label}</label>
+                                    {f.type === 'select' ? (
+                                        <select name={f.name} className="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
+                                            {f.options.map(o => <option key={o}>{o}</option>)}
+                                        </select>
+                                    ) : (
+                                        <input name={f.name} required type={f.type || 'text'} className="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold" />
+                                    )}
+                                </div>
+                            ))}
+                            <button type="submit" className={`w-full ${color} text-white py-5 rounded-2xl font-black text-lg shadow-xl mt-4`}>SUBMIT RECORD</button>
+                        </form>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row">
+                    {/* Desktop Sidebar */}
+                    <aside className="hidden md:flex flex-col w-64 bg-emerald-900 text-white p-6 sticky top-0 h-screen">
+                        <div className="flex items-center gap-3 mb-10"><Icon name="shield-check" className="text-emerald-400" size={32}/><span className="font-black text-xl uppercase tracking-tighter">Eire-Potato</span></div>
+                        <nav className="space-y-2 flex-1">
+                            <button onClick={() => setView('home')} className={`flex items-center gap-3 w-full p-4 rounded-2xl font-bold transition ${view === 'home' ? 'bg-emerald-800' : 'hover:bg-emerald-800/50'}`}><Icon name="layout-dashboard"/> Home</button>
+                            <button onClick={() => setView('history')} className={`flex items-center gap-3 w-full p-4 rounded-2xl font-bold transition ${view === 'history' ? 'bg-emerald-800' : 'hover:bg-emerald-800/50'}`}><Icon name="history"/> Logs</button>
+                            <button onClick={() => setView('documents')} className={`flex items-center gap-3 w-full p-4 rounded-2xl font-bold transition ${view === 'documents' ? 'bg-emerald-800' : 'hover:bg-emerald-800/50'}`}><Icon name="file-text"/> Vault</button>
+                        </nav>
+                        <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest opacity-50">V5.0 Responsive</div>
+                    </aside>
+
+                    <main className="flex-1 pb-24 md:pb-8 bg-slate-50">
+                        {view === 'home' && <HomeView />}
+                        {view === 'history' && <HistoryView />}
+                        {view === 'documents' && <PolicyVault />}
+                        {view === 'temps' && <RecordForm title="Store Temp" type="temps" color="bg-cyan-700" fields={[{label: 'Store', name: 'store', type: 'select', options: stores}, {label: 'Temp (°C)', name: 'val', type: 'number'}]} />}
+                        {view === 'cleaning' && <RecordForm title="Cleaning" type="cleaning" color="bg-blue-600" fields={[{label: 'Area', name: 'area', type: 'select', options: stores}, {label: 'Staff', name: 'staff', type: 'select', options: staffList}]} />}
+                        {view === 'pest' && <RecordForm title="Pest Control" type="pest" color="bg-rose-600" fields={[{label: 'Bait Point', name: 'id', type: 'number'}, {label: 'Status', name: 'status', type: 'select', options: ['Clear', 'Activity Found']}]} />}
+                        {view === 'vehicle' && <RecordForm title="Vehicle Inspection" type="vehicle" color="bg-amber-600" fields={[{label: 'Reg', name: 'reg'}, {label: 'Condition', name: 'cond', type: 'select', options: ['Pass', 'Fail']}]} />}
+                        {view === 'fuel' && <RecordForm title="Fuel Usage" type="fuel" color="bg-slate-700" fields={[{label: 'Litres', name: 'qty', type: 'number'}, {label: 'Asset', name: 'asset'}]} />}
+                        {view === 'training' && <RecordForm title="Training" type="training" color="bg-purple-600" fields={[{label: 'Staff', name: 'staff', type: 'select', options: staffList}, {label: 'Module', name: 'topic', type: 'select', options: ['Manual Handling', 'HACCP', 'Nurture Awareness']}]} />}
+                        {view === 'visitor' && <RecordForm title="Visitor Log" type="visitor" color="bg-emerald-600" fields={[{label: 'Name', name: 'name'}, {label: 'Purpose', name: 'reason'}]} />}
+                        {view === 'add_doc' && <RecordForm title="Log Policy" type="documents" color="bg-emerald-800" fields={[{label: 'Mapping', name: 'requirementId', type: 'select', options: requiredDocs.map(d => d.id)}, {label: 'Version Date', name: 'versionDate', type: 'date'}]} />}
+                        {view === 'pppl' && (
+                            <div className="p-4 md:p-12 max-w-4xl mx-auto space-y-6">
+                                <button onClick={() => setView('home')} className="p-3 bg-white rounded-xl shadow-sm"><Icon name="x" /></button>
+                                <h2 className="text-2xl font-black uppercase tracking-tighter">Tesco PPPL 24/25</h2>
+                                <div className="grid gap-3">{[
+                                    {p: "InSyst", a: "Acetamiprid", phi: "7 Days"},
+                                    {p: "Fazor", a: "Maleic Hydrazide", phi: "21 Days"},
+                                    {p: "Maxim", a: "Fludioxonil", phi: "N/A"}
+                                ].map((p,i) => (<div key={i} className="p-5 bg-white rounded-3xl border flex justify-between items-center"><div><p className="font-black text-slate-800">{p.p}</p><p className="text-[10px] text-slate-400 font-bold uppercase">{p.a}</p></div><span className="text-xs font-black text-indigo-700">PHI: {p.phi}</span></div>))}</div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Mobile Bottom Nav */}
+                    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around items-center z-50 rounded-t-3xl shadow-lg">
+                        <button onClick={() => setView('home')} className={`flex flex-col items-center text-[10px] font-bold ${view === 'home' ? 'text-emerald-700' : 'text-slate-400'}`}><Icon name="layout-dashboard" size={20}/> HOME</button>
+                        <button onClick={() => setView('history')} className={`flex flex-col items-center text-[10px] font-bold ${view === 'history' ? 'text-emerald-700' : 'text-slate-400'}`}><Icon name="history" size={20}/> LOGS</button>
+                        <button onClick={() => setView('documents')} className={`flex flex-col items-center text-[10px] font-bold ${view === 'documents' ? 'text-emerald-700' : 'text-slate-400'}`}><Icon name="file-text" size={20}/> VAULT</button>
+                    </nav>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
